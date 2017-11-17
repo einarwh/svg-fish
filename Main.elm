@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Letter exposing (..)
+import Fishy exposing (..)
 import Fitting exposing (..)
 import Picture exposing (..)
 import Rendering exposing (..)
@@ -30,5 +31,6 @@ main =
     se = n
     name = nonet nw nm ne mw mm me sw sm se 
     zoom p = nonet nw nm ne mw p me sw sm se 
+    fish = createPicture hendersonFishShapes
   in     
-    (times 2 zoom name) box |> toSvg (200, 200)
+    (over fish (Picture.turns 2 fish)) box |> toSvg (200, 200)
