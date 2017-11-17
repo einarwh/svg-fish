@@ -8,29 +8,43 @@ import Mirror exposing (..)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 
-toPolygonElement : List Vector -> Svg msg
-toPolygonElement pts = 
-  let s = 
-    let 
-      str {x, y} = (toString x) ++ "," ++ (toString y)
-    in
-      pts |> List.map str |> String.join " "
-  in
-    Svg.polygon 
-      [ stroke "Black"
-      , strokeWidth "0.5"
-      , fill "None"
-      , points s ] []
-
-toPolylineElement : List Vector -> Svg msg
-toPolylineElement pts = 
-  Svg.polyline [ points "20,100 40,60 70,80 100,20" ] []
-
 getStrokeWidthFromStyle : Maybe StrokeStyle -> Float
 getStrokeWidthFromStyle style = 
   case style of 
-    Just strokeStyle -> 0.5
-    Nothing -> 0.5 
+    Just { strokeWidth } -> sqrt strokeWidth
+    Nothing -> 2.0
+
+toPolygonElement : Style -> List Vector -> Svg msg
+toPolygonElement style pts = 
+  let 
+    s = 
+      let 
+        str {x, y} = (toString x) ++ "," ++ (toString y)
+      in
+        pts |> List.map str |> String.join " "
+    sw = getStrokeWidthFromStyle style.stroke  
+  in
+    Svg.polygon 
+      [ stroke "Black"
+      , strokeWidth <| toString sw
+      , fill "None"
+      , points s ] []
+
+toPolylineElement : Style -> List Vector -> Svg msg
+toPolylineElement style pts = 
+  let 
+    s = 
+      let 
+        str {x, y} = (toString x) ++ "," ++ (toString y)
+      in
+        pts |> List.map str |> String.join " "
+    sw = getStrokeWidthFromStyle style.stroke  
+  in
+    Svg.polyline 
+      [ stroke "Black"
+      , strokeWidth <| toString sw
+      , fill "None"
+      , points s ] []
 
 toCurveElement : Style -> Vector -> Vector -> Vector -> Vector -> Svg msg
 toCurveElement style pt1 pt2 pt3 pt4 = 
@@ -52,8 +66,8 @@ toCurveElement style pt1 pt2 pt3 pt4 =
 toSvgElement : Style -> Shape -> Svg msg
 toSvgElement style shape = 
   case shape of  
-    Polygon { points } -> toPolygonElement points    
-    Polyline { pts } -> toPolylineElement pts
+    Polygon { points } -> toPolygonElement style points    
+    Polyline { pts } -> toPolylineElement style pts
     Curve { point1, point2, point3, point4 } ->
       toCurveElement style point1 point2 point3 point4 
     x -> text "nothing"
@@ -61,12 +75,12 @@ toSvgElement style shape =
 toSvg : (Int, Int) -> Rendering -> Svg msg 
 toSvg bounds rendering = 
   let
-    (width, height) = bounds
-    viewBoxValue = ["0", "0", toString width, toString height] |> String.join " "
-    mirror = mirrorVector <| toFloat height
+    (w, h) = bounds
+    viewBoxValue = ["0", "0", toString w, toString h] |> String.join " "
+    mirror = mirrorVector <| toFloat h
     toElement (shape, style) = toSvgElement style (mirrorShape mirror shape)
   in
     svg
-      [ version "1.1", x "0", y "0", viewBox viewBoxValue ]
+      [ version "1.1", x "0", y "0", width (toString w), height (toString h) ]
       (rendering |> List.map toElement)
  
